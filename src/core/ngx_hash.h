@@ -12,17 +12,17 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-
+/* hash元素结构 */
 typedef struct {
-    void             *value;
-    u_short           len;
-    u_char            name[1];
+    void             *value;        /* 指向value的指针 */
+    u_short           len;          /* key的长度 */
+    u_char            name[1];      /* 指向key的首地址，key长度为变长*/
 } ngx_hash_elt_t;
 
-
+/* hash表结构 桶 */
 typedef struct {
-    ngx_hash_elt_t  **buckets;
-    ngx_uint_t        size;
+    ngx_hash_elt_t  **buckets;      /* hash表的桶指针地址值 */
+    ngx_uint_t        size;         /* hash表的桶的个数(大小) */
 } ngx_hash_t;
 
 
@@ -48,17 +48,17 @@ typedef struct {
     ngx_hash_wildcard_t  *wc_tail;
 } ngx_hash_combined_t;
 
-
+/* hash表初始化结构 */
 typedef struct {
-    ngx_hash_t       *hash;
-    ngx_hash_key_pt   key;
+    ngx_hash_t       *hash;         /* 指向hash数组结构 */
+    ngx_hash_key_pt   key;          /* 计算key散列的方法 */
 
-    ngx_uint_t        max_size;
-    ngx_uint_t        bucket_size;
+    ngx_uint_t        max_size;     /* 最大个数 */
+    ngx_uint_t        bucket_size;  /* 桶空间大小 */
 
-    char             *name;
-    ngx_pool_t       *pool;
-    ngx_pool_t       *temp_pool;
+    char             *name;         /* hash表名称 */
+    ngx_pool_t       *pool;         /* 内存池 */
+    ngx_pool_t       *temp_pool;    /* 临时内存池*/
 } ngx_hash_init_t;
 
 

@@ -14,7 +14,7 @@
 
 
 typedef struct ngx_queue_s  ngx_queue_t;
-
+/* 链表 ngx_queue_s会挂载到实体*/
 struct ngx_queue_s {
     ngx_queue_t  *prev;
     ngx_queue_t  *next;
@@ -99,7 +99,8 @@ struct ngx_queue_s {
     (h)->prev = (n)->prev;                                                    \
     (h)->prev->next = h;
 
-
+/* 通过链表可以找到结构体所在的指针 */
+/* 此函数，是Nginx 链表设计的关键点 */
 #define ngx_queue_data(q, type, link)                                         \
     (type *) ((u_char *) q - offsetof(type, link))
 

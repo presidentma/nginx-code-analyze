@@ -13,7 +13,7 @@
 static ngx_int_t ngx_disable_accept_events(ngx_cycle_t *cycle, ngx_uint_t all);
 static void ngx_close_accepted_connection(ngx_connection_t *c);
 
-
+/* event accept 事件接收 */
 void
 ngx_event_accept(ngx_event_t *ev)
 {
@@ -61,7 +61,7 @@ ngx_event_accept(ngx_event_t *ev)
         } else {
             s = accept(lc->fd, &sa.sockaddr, &socklen);
         }
-#else
+#else   /* 接收fd */
         s = accept(lc->fd, &sa.sockaddr, &socklen);
 #endif
 
@@ -304,7 +304,10 @@ ngx_event_accept(ngx_event_t *ev)
 
         log->data = NULL;
         log->handler = NULL;
-
+        /* 调用ngx_listen_t上的handler 回调方法 */
+        /* 该回调方法就是ngx_http_init_connection 主要用于初始化ngx_connection_t客户端连接 */
+        /* ngx_http_init_connection 会将rev->handler的回调函数修改成： ngx_http_wait_request_handler，该回调函数主要用于处理read事件的数据读取。后续当有read事件上来的时候，
+        就会回调ngx_http_wait_request_handler函数，而非ngx_event_accept函数 */
         ls->handler(c);
 
         if (ngx_event_flags & NGX_USE_KQUEUE_EVENT) {
@@ -314,7 +317,7 @@ ngx_event_accept(ngx_event_t *ev)
     } while (ev->available);
 }
 
-
+/* 尝试获取accept锁 */
 ngx_int_t
 ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
 {
@@ -322,11 +325,11 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
 
         ngx_log_debug0(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                        "accept mutex locked");
-
+        /* 判断是否已经拿到锁 */
         if (ngx_accept_mutex_held && ngx_accept_events == 0) {
             return NGX_OK;
         }
-
+        /* 调用ngx_enable_accept_events，开启监听accpet事件*/
         if (ngx_enable_accept_events(cycle) == NGX_ERROR) {
             ngx_shmtx_unlock(&ngx_accept_mutex);
             return NGX_ERROR;
@@ -340,8 +343,11 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
 
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "accept mutex lock failed: %ui", ngx_accept_mutex_held);
-
+    /**
+	 * 没有拿到锁，但是ngx_accept_mutex_held=1
+	 */
     if (ngx_accept_mutex_held) {
+        /* 没有拿到锁，调用ngx_disable_accept_events，将accpet事件删除 */
         if (ngx_disable_accept_events(cycle, 0) == NGX_ERROR) {
             return NGX_ERROR;
         }
@@ -352,7 +358,8 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+/* accept event */
+/* 将accept事件加入到event上 */
 ngx_int_t
 ngx_enable_accept_events(ngx_cycle_t *cycle)
 {
@@ -364,11 +371,11 @@ ngx_enable_accept_events(ngx_cycle_t *cycle)
     for (i = 0; i < cycle->listening.nelts; i++) {
 
         c = ls[i].connection;
-
+        /* 如果c->read->active为true，则表示是活跃的连接，已经被使用中 */
         if (c == NULL || c->read->active) {
             continue;
         }
-
+        /* 添加读事件 */
         if (ngx_add_event(c->read, NGX_READ_EVENT, 0) == NGX_ERROR) {
             return NGX_ERROR;
         }
@@ -377,7 +384,8 @@ ngx_enable_accept_events(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+/* 不可接收accept event */
+/* 将accept事件从event上删除 */
 static ngx_int_t
 ngx_disable_accept_events(ngx_cycle_t *cycle, ngx_uint_t all)
 {
@@ -406,7 +414,7 @@ ngx_disable_accept_events(ngx_cycle_t *cycle, ngx_uint_t all)
         }
 
 #endif
-
+        /* 删除读事件 */
         if (ngx_del_event(c->read, NGX_READ_EVENT, NGX_DISABLE_EVENT)
             == NGX_ERROR)
         {

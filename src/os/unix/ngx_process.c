@@ -82,7 +82,7 @@ ngx_signal_t  signals[] = {
     { 0, NULL, "", NULL }
 };
 
-
+/* 启动工作进程子进程 */
 ngx_pid_t
 ngx_spawn_process(ngx_cycle_t *cycle, ngx_spawn_proc_pt proc, void *data,
     char *name, ngx_int_t respawn)
@@ -113,7 +113,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, ngx_spawn_proc_pt proc, void *data,
     if (respawn != NGX_PROCESS_DETACHED) {
 
         /* Solaris 9 still has no AF_LOCAL */
-
+        /* 创建匿名管道 域套接字 */
         if (socketpair(AF_UNIX, SOCK_STREAM, 0, ngx_processes[s].channel) == -1)
         {
             ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
@@ -182,7 +182,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, ngx_spawn_proc_pt proc, void *data,
 
     ngx_process_slot = s;
 
-
+    /* fork 一个子进程 */
     pid = fork();
 
     switch (pid) {
@@ -194,6 +194,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, ngx_spawn_proc_pt proc, void *data,
         return NGX_INVALID_PID;
 
     case 0:
+        /* 子进程调用ngx_worker_process_cycle */
         ngx_parent = ngx_pid;
         ngx_pid = ngx_getpid();
         proc(cycle, data);

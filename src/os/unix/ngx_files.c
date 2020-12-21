@@ -754,7 +754,7 @@ ngx_close_glob(ngx_glob_t *gl)
     globfree(&gl->pglob);
 }
 
-
+/* 尝试非阻塞锁住fd */
 ngx_err_t
 ngx_trylock_fd(ngx_fd_t fd)
 {
@@ -771,7 +771,7 @@ ngx_trylock_fd(ngx_fd_t fd)
     return 0;
 }
 
-
+/* 尝试阻塞锁住fd */
 ngx_err_t
 ngx_lock_fd(ngx_fd_t fd)
 {
@@ -788,7 +788,7 @@ ngx_lock_fd(ngx_fd_t fd)
     return 0;
 }
 
-
+/* 解锁 */
 ngx_err_t
 ngx_unlock_fd(ngx_fd_t fd)
 {

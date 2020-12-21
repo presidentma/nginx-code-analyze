@@ -73,14 +73,15 @@
 
 #define NGX_MAX_CONF_ERRSTR  1024
 
-
+/* 模块支持的命令集结构 */
 struct ngx_command_s {
-    ngx_str_t             name;
-    ngx_uint_t            type;
+    ngx_str_t             name;     /* 命令名称 */
+    ngx_uint_t            type;     /* 命令类别 */
+     /* set回调函数 */
     char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
     ngx_uint_t            conf;
-    ngx_uint_t            offset;
-    void                 *post;
+    ngx_uint_t            offset;   /* 偏移量，命令长度 */
+    void                 *post;     /* 支持的回调方法；大多数情况为NULL*/
 };
 
 #define ngx_null_command  { ngx_null_string, 0, NULL, 0, 0, NULL }
@@ -112,22 +113,22 @@ typedef struct {
 typedef char *(*ngx_conf_handler_pt)(ngx_conf_t *cf,
     ngx_command_t *dummy, void *conf);
 
-
+/* 需要解析的配置文件，需要解析的模块类型以及命令集类型的信息 */
 struct ngx_conf_s {
-    char                 *name;
-    ngx_array_t          *args;
+    char                 *name;     /* 名字 */
+    ngx_array_t          *args;     /* 命令参数array */
 
     ngx_cycle_t          *cycle;
     ngx_pool_t           *pool;
     ngx_pool_t           *temp_pool;
-    ngx_conf_file_t      *conf_file;
+    ngx_conf_file_t      *conf_file;    
     ngx_log_t            *log;
 
     void                 *ctx;
     ngx_uint_t            module_type;
     ngx_uint_t            cmd_type;
 
-    ngx_conf_handler_pt   handler;
+    ngx_conf_handler_pt   handler;  /*  */
     void                 *handler_conf;
 };
 

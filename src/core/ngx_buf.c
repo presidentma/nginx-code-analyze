@@ -216,21 +216,22 @@ ngx_chain_update_chains(ngx_pool_t *p, ngx_chain_t **free, ngx_chain_t **busy,
 
     while (*busy) {
         cl = *busy;
-
+        /* 如果buf不为空，不满足释放条件跳出 */
         if (ngx_buf_size(cl->buf) != 0) {
             break;
         }
-
+         /* 缓冲区类型不同，直接释放 */
         if (cl->buf->tag != tag) {
             *busy = cl->next;
             ngx_free_chain(p, cl);
             continue;
         }
-
+        /* 将buf使用的部分回归到 起点指针地址 */
         cl->buf->pos = cl->buf->start;
         cl->buf->last = cl->buf->start;
-
+        /* 继续取busy下一节点判断是否可释放 */
         *busy = cl->next;
+        /* 把cl放到free链表上 */
         cl->next = *free;
         *free = cl;
     }

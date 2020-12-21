@@ -202,7 +202,11 @@ ngx_http_header_t  ngx_http_headers_in[] = {
     { ngx_null_string, 0, NULL }
 };
 
-
+/* 接收连接后的回调函数 */
+/*
+ngx_http_init_connection初始化一个http的连接，并且将rev->handler回调函数修改成ngx_http_wait_request_handler，主要用于接收read事件数据。
+所有后面进入事件循环后，read事件调用的是ngx_http_wait_request_handler函数。 
+ */
 void
 ngx_http_init_connection(ngx_connection_t *c)
 {
@@ -321,6 +325,7 @@ ngx_http_init_connection(ngx_connection_t *c)
     c->log_error = NGX_ERROR_INFO;
 
     rev = c->read;
+    /* 将rev->handler回调函数修改成ngx_http_wait_request_handler */
     rev->handler = ngx_http_wait_request_handler;
     c->write->handler = ngx_http_empty_handler;
 
@@ -370,7 +375,7 @@ ngx_http_init_connection(ngx_connection_t *c)
     }
 }
 
-
+/* 接收http read事件数据 */
 static void
 ngx_http_wait_request_handler(ngx_event_t *rev)
 {

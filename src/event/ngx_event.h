@@ -26,21 +26,25 @@ typedef struct {
 
 #endif
 
-
+/* 事件数据结构 */
 struct ngx_event_s {
+    /* 事件相关对象, 通常data指向ngx_connection_t连接对象. 
+    (开启异步IO后可能指向ngx_event_aio_t结构体) */
     void            *data;
 
     unsigned         write:1;
-
+    /* 标识是否可以建立连接 */
     unsigned         accept:1;
 
     /* used to detect the stale events in kqueue and epoll */
+    /* 用于检测kqueue和epoll中的过期事件 */
     unsigned         instance:1;
 
     /*
      * the event was passed or would be passed to a kernel;
      * in aio mode - operation was posted.
      */
+    /* 表示是否是活动状态 */
     unsigned         active:1;
 
     unsigned         disabled:1;
@@ -99,7 +103,7 @@ struct ngx_event_s {
      */
 
     int              available;
-
+    /* event回调 */
     ngx_event_handler_pt  handler;
 
 
@@ -429,9 +433,9 @@ extern ngx_os_io_t  ngx_io;
 #define NGX_EVENT_MODULE      0x544E5645  /* "EVNT" */
 #define NGX_EVENT_CONF        0x02000000
 
-
+/* event事件模块配置的结构对象 */
 typedef struct {
-    ngx_uint_t    connections;
+    ngx_uint_t    connections;  /* 连接数量 */
     ngx_uint_t    use;
 
     ngx_flag_t    multi_accept;
@@ -446,13 +450,14 @@ typedef struct {
 #endif
 } ngx_event_conf_t;
 
-
+/* 模块上下文结构 */
 typedef struct {
-    ngx_str_t              *name;
-
+    ngx_str_t              *name;   /* 名字 */
+    /* 创建配置文件 */
     void                 *(*create_conf)(ngx_cycle_t *cycle);
+    /* 初始化配置文件 */
     char                 *(*init_conf)(ngx_cycle_t *cycle, void *conf);
-
+    /* 事件的action对象结构 */
     ngx_event_actions_t     actions;
 } ngx_event_module_t;
 
@@ -490,7 +495,10 @@ extern ngx_uint_t             ngx_event_flags;
 extern ngx_module_t           ngx_events_module;
 extern ngx_module_t           ngx_event_core_module;
 
-
+/* 
+获取event的配置，先获取ngx_events_module配置，然后再到ngx_events_module模块上
+找到ngx_event_core_module 事件核心模块的配置
+ */
 #define ngx_event_get_conf(conf_ctx, module)                                  \
              (*(ngx_get_conf(conf_ctx, ngx_events_module))) [module.ctx_index]
 

@@ -40,10 +40,11 @@ static ngx_conf_enum_t  ngx_debug_points[] = {
 
 static ngx_command_t  ngx_core_commands[] = {
 
-    { ngx_string("daemon"),
-      NGX_MAIN_CONF|NGX_DIRECT_CONF|NGX_CONF_FLAG,
-      ngx_conf_set_flag_slot,
+    { ngx_string("daemon"),     /* 命令名称 */
+      NGX_MAIN_CONF|NGX_DIRECT_CONF|NGX_CONF_FLAG, /* 类型 */
+      ngx_conf_set_flag_slot,   /* 回调方法 */
       0,
+      /* 偏移量；使用这个偏移量后，可以参考 ngx_core_module_create_conf*/
       offsetof(ngx_core_conf_t, daemon),
       NULL },
 
@@ -162,7 +163,7 @@ static ngx_core_module_t  ngx_core_module_ctx = {
     ngx_core_module_init_conf
 };
 
-
+/* 核心模块初始化 */
 ngx_module_t  ngx_core_module = {
     NGX_MODULE_V1,
     &ngx_core_module_ctx,                  /* module context */
@@ -206,7 +207,7 @@ main(int argc, char *const *argv)
     if (ngx_strerror_init() != NGX_OK) {
         return 1;
     }
-
+    /* 调用ngx_get_options方法，主要用于解析命令行中的参数,如：./nginx -s stop|start|restart*/
     if (ngx_get_options(argc, argv) != NGX_OK) {
         return 1;
     }
@@ -220,16 +221,17 @@ main(int argc, char *const *argv)
     }
 
     /* TODO */ ngx_max_sockets = -1;
-
+    /* 调用ngx_time_init方法，初始化并更新时间，如全局变量ngx_cached_time */
     ngx_time_init();
 
 #if (NGX_PCRE)
     ngx_regex_init();
 #endif
-
+    /* 调用ngx_getpid方法，获取当前进程的pid。一般pid会放在nginx.pid的文件中，用于发送重启，关闭等信号命令 */
     ngx_pid = ngx_getpid();
+    /* 获取父进程id */
     ngx_parent = ngx_getppid();
-
+    /* 调用ngx_log_init方法，初始化日志，并得到日志的文件句柄ngx_log_file.fd */
     log = ngx_log_init(ngx_prefix);
     if (log == NULL) {
         return 1;
@@ -244,7 +246,7 @@ main(int argc, char *const *argv)
      * init_cycle->log is required for signal handlers and
      * ngx_process_options()
      */
-
+    /* 初始化init_cycle Nginx的全局变量内存。在内存池上创建一个默认大小1024的全局变量 */
     ngx_memzero(&init_cycle, sizeof(ngx_cycle_t));
     init_cycle.log = log;
     ngx_cycle = &init_cycle;
@@ -253,15 +255,16 @@ main(int argc, char *const *argv)
     if (init_cycle.pool == NULL) {
         return 1;
     }
-
+    /* 调用ngx_save_argv方法，保存Nginx命令行中的参数和变量,放到全局变量ngx_argv */
     if (ngx_save_argv(&init_cycle, argc, argv) != NGX_OK) {
         return 1;
     }
-
+    /* 调用ngx_process_options方法，将ngx_get_options中获得的这些参数取值赋值到ngx_cycle中,
+    prefix, conf_prefix, conf_file, conf_param等字段 */
     if (ngx_process_options(&init_cycle) != NGX_OK) {
         return 1;
     }
-
+    /* 调用ngx_os_init()初始化系统相关变量，如内存页面大小ngx_pagesize,ngx_cacheline_size,最大连接数ngx_max_sockets等 */
     if (ngx_os_init(log) != NGX_OK) {
         return 1;
     }
@@ -269,7 +272,7 @@ main(int argc, char *const *argv)
     /*
      * ngx_crc32_table_init() requires ngx_cacheline_size set in ngx_os_init()
      */
-
+    /* 调用ngx_crc32_table_init方法，初始化一致性hash表，主要作用是加快查询 */
     if (ngx_crc32_table_init() != NGX_OK) {
         return 1;
     }
@@ -279,15 +282,15 @@ main(int argc, char *const *argv)
      */
 
     ngx_slab_sizes_init();
-
+    /* 调用ngx_add_inherited_sockets方法，ngx_add_inherited_sockets主要是继承了socket的套接字。主要作用是热启动的时候需要平滑过渡 */
     if (ngx_add_inherited_sockets(&init_cycle) != NGX_OK) {
         return 1;
     }
-
+    /* 调用ngx_preinit_modules方法，主要是前置的初始化模块，对模块进行编号处理 */
     if (ngx_preinit_modules() != NGX_OK) {
         return 1;
     }
-
+    /* 调用ngx_init_cycle方法，完成全局变量cycle的初始化 */
     cycle = ngx_init_cycle(&init_cycle);
     if (cycle == NULL) {
         if (ngx_test_config) {
@@ -323,7 +326,7 @@ main(int argc, char *const *argv)
 
         return 0;
     }
-
+    /* 调用ngx_signal_process方法，如果有信号，则进入ngx_signal_process方法。例如：例如./nginx -s stop,则处理Nginx的停止信号 */
     if (ngx_signal) {
         return ngx_signal_process(cycle, ngx_signal);
     }
@@ -331,7 +334,7 @@ main(int argc, char *const *argv)
     ngx_os_status(cycle->log);
 
     ngx_cycle = cycle;
-
+    /* 调用ngx_get_conf方法，得到核心模块ngx_core_conf_t的配置文件指针 */
     ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_core_module);
 
     if (ccf->master && ngx_process == NGX_PROCESS_SINGLE) {
@@ -339,11 +342,11 @@ main(int argc, char *const *argv)
     }
 
 #if !(NGX_WIN32)
-
+    /* 初始化信号相关，如屏蔽字等 */
     if (ngx_init_signals(cycle->log) != NGX_OK) {
         return 1;
     }
-
+    /* 创建守护进程 */
     if (!ngx_inherited && ccf->daemon) {
         if (ngx_daemon(cycle->log) != NGX_OK) {
             return 1;
@@ -357,7 +360,7 @@ main(int argc, char *const *argv)
     }
 
 #endif
-
+    /* 调用ngx_create_pidfile方法，创建pid文件。如nginx.pid */
     if (ngx_create_pidfile(&ccf->pid, cycle->log) != NGX_OK) {
         return 1;
     }
@@ -374,12 +377,13 @@ main(int argc, char *const *argv)
     }
 
     ngx_use_stderr = 0;
-
-    if (ngx_process == NGX_PROCESS_SINGLE) {
+    /* 调用ngx_master_process_cycle方法，这函数里面开始真正创建多个Nginx的子进程。
+    这个方法包括子进程创建、事件监听、各种模块运行等都会包含进去 */
+    if (ngx_process == NGX_PROCESS_SINGLE) { //单进程模式
         ngx_single_process_cycle(cycle);
 
     } else {
-        ngx_master_process_cycle(cycle);
+        ngx_master_process_cycle(cycle); //多进程模式
     }
 
     return 0;
@@ -447,14 +451,14 @@ ngx_show_version_info(void)
     }
 }
 
-
+/* 继承socket句柄 */
 static ngx_int_t
 ngx_add_inherited_sockets(ngx_cycle_t *cycle)
 {
     u_char           *p, *v, *inherited;
     ngx_int_t         s;
     ngx_listening_t  *ls;
-
+    /* 获取宏环境变量NGINX的值    例如：# export NGINX="16000:16500:16600;" */
     inherited = (u_char *) getenv(NGINX_VAR);
 
     if (inherited == NULL) {
@@ -463,7 +467,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
 
     ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0,
                   "using inherited sockets from \"%s\"", inherited);
-
+    /* 初始化ngx_cycle.listening数组，并且数组中包含10个元素 */
     if (ngx_array_init(&cycle->listening, cycle->pool, 10,
                        sizeof(ngx_listening_t))
         != NGX_OK)
@@ -490,7 +494,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
             }
 
             ngx_memzero(ls, sizeof(ngx_listening_t));
-
+             /* 将fd保存到ngx_listening_t结构数组上 */
             ls->fd = (ngx_socket_t) s;
         }
     }
@@ -500,7 +504,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
                       "invalid socket number \"%s\" in " NGINX_VAR
                       " environment variable, ignoring", v);
     }
-
+    /* 更改全局变量已经初始化要继承的socket */
     ngx_inherited = 1;
 
     return ngx_set_inherited_sockets(cycle);
@@ -826,7 +830,7 @@ ngx_get_options(int argc, char *const *argv)
 
                 ngx_log_stderr(0, "option \"-g\" requires parameter");
                 return NGX_ERROR;
-
+            /* 如果发出信号则为信号全局变量赋值 */
             case 's':
                 if (*p) {
                     ngx_signal = (char *) p;

@@ -21,12 +21,14 @@ static ngx_uint_t ngx_module_ctx_index(ngx_cycle_t *cycle, ngx_uint_t type,
 ngx_uint_t         ngx_max_module;
 static ngx_uint_t  ngx_modules_n;
 
-
+/* 初始化所有模块；并对所有模块进行编号处理 */
 ngx_int_t
 ngx_preinit_modules(void)
 {
     ngx_uint_t  i;
-
+    /* 把module添加到ngx_modules数组 */
+    /* 具体的模块可通过编译前的configure命令进行配置，即设置哪些模块需要编译，哪些不被编译。
+    当编译的时候，会生成objs/ngx_modules.c的文件，里面就包含模块数组。 */
     for (i = 0; ngx_modules[i]; i++) {
         ngx_modules[i]->index = i;
         ngx_modules[i]->name = ngx_module_names[i];
@@ -38,7 +40,10 @@ ngx_preinit_modules(void)
     return NGX_OK;
 }
 
-
+/**
+ * ngx_init_cycle 在初始化cycle的时候，初始化模块
+ * 创建一个列表，并将静态的模块拷贝到列表上
+ */
 ngx_int_t
 ngx_cycle_modules(ngx_cycle_t *cycle)
 {
@@ -61,12 +66,16 @@ ngx_cycle_modules(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+/* 初始化module */
 ngx_int_t
 ngx_init_modules(ngx_cycle_t *cycle)
 {
     ngx_uint_t  i;
-
+    
+    /**
+     * 对每个模块进行一次初始化操作
+     * 调用 init_module 回调函数，初始化每个模块的数据
+     */
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->init_module) {
             if (cycle->modules[i]->init_module(cycle) != NGX_OK) {
@@ -78,7 +87,7 @@ ngx_init_modules(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+/* 统计每个类型下面总共多少个模块 */
 ngx_int_t
 ngx_count_modules(ngx_cycle_t *cycle, ngx_uint_t type)
 {

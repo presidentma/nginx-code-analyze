@@ -241,12 +241,12 @@ ngx_shmtx_destroy(ngx_shmtx_t *mtx)
     }
 }
 
-
+/* 尝试获取锁 */
 ngx_uint_t
 ngx_shmtx_trylock(ngx_shmtx_t *mtx)
 {
     ngx_err_t  err;
-
+    /* 尝试锁住fd */
     err = ngx_trylock_fd(mtx->fd);
 
     if (err == 0) {
