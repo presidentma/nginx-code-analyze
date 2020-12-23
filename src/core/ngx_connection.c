@@ -402,7 +402,8 @@ ngx_set_inherited_sockets(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+/* 打开监听套接字 */
+/* 将创建的监听套接字进行套接字选项的设置（比如非阻塞、接受发送的缓冲区、绑定、监听处理） */
 ngx_int_t
 ngx_open_listening_sockets(ngx_cycle_t *cycle)
 {

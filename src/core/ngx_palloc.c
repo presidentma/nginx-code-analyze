@@ -273,7 +273,7 @@ ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
     return p;
 }
 
-
+/* 释放large内存 */
 ngx_int_t
 ngx_pfree(ngx_pool_t *pool, void *p)
 {

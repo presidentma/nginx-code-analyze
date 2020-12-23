@@ -20,7 +20,7 @@ typedef struct {
     void        **loc_conf;
 } ngx_http_conf_ctx_t;
 
-
+/* http module */
 typedef struct {
     ngx_int_t   (*preconfiguration)(ngx_conf_t *cf);
     ngx_int_t   (*postconfiguration)(ngx_conf_t *cf);

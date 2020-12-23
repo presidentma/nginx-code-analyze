@@ -110,7 +110,7 @@ static void ngx_epoll_notify_handler(ngx_event_t *ev);
 static void ngx_epoll_test_rdhup(ngx_cycle_t *cycle);
 #endif
 static void ngx_epoll_done(ngx_cycle_t *cycle);
-static ngx_int_t ngx_epoll_add_event(ngx_event_t *ev, ngx_int_t event,
+static ngx_int_t ngx_epoll_add_add_event(ngx_event_t *ev, ngx_int_t event,
     ngx_uint_t flags);
 static ngx_int_t ngx_epoll_del_event(ngx_event_t *ev, ngx_int_t event,
     ngx_uint_t flags);
@@ -428,7 +428,7 @@ ngx_epoll_notify_init(ngx_log_t *log)
     return NGX_OK;
 }
 
-
+/* epoll通知回调 */
 static void
 ngx_epoll_notify_handler(ngx_event_t *ev)
 {
